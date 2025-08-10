@@ -7,7 +7,16 @@ app = FastAPI()
 
 
 def parse_yyMMdd(s: str) -> datetime:
-    """Parse MRZ YYMMDD date format into a datetime object."""
+    """Parse MRZ YYMMDD date format into a datetime object.
+
+    The MRZ date field is expected to contain exactly six digits. If the value
+    is malformed or contains non-digit characters the function raises a
+    ``ValueError`` to allow the caller to react appropriately.
+    """
+
+    if len(s) != 6 or not s.isdigit():
+        raise ValueError(f"Invalid date format: {s}")
+
     yy, mm, dd = int(s[:2]), int(s[2:4]), int(s[4:6])
     year = 1900 + yy if yy > 50 else 2000 + yy
     return datetime(year, mm, dd)
@@ -30,7 +39,10 @@ async def verify(file: UploadFile = File(...)):
     if not dob:
         raise HTTPException(status_code=400, detail="DOB not found in MRZ")
 
-    age = relativedelta(datetime.utcnow(), parse_yyMMdd(dob)).years
+    try:
+        age = relativedelta(datetime.utcnow(), parse_yyMMdd(dob)).years
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid DOB format in MRZ")
     return {
         "ok": True,
         "source": "MRZ",
