@@ -1,9 +1,19 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from passporteye import read_mrz
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 app = FastAPI()
+
+# Enable permissive CORS so the endpoint can be accessed from browsers
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def parse_yyMMdd(s: str) -> datetime:
